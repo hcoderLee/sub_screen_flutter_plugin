@@ -4,9 +4,11 @@ import 'package:flutter/services.dart';
 import 'model.dart';
 import 'sub_screen_platform_interface.dart';
 
+const _methodChannelName = 'com.hcoderlee.subscreen.sub_screen/methods';
+
 class MethodChannelSubScreen extends SubScreenPlatform {
   @visibleForTesting
-  final methodChannel = const MethodChannel('sub_screen');
+  final methodChannel = const MethodChannel(_methodChannelName);
 
   @override
   Future<List<Display>> getDisplays() async {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sub_screen/model.dart';
 import 'package:sub_screen/sub_screen.dart';
 import 'package:sub_screen_example/widgets/animation_box.dart';
+import 'package:sub_screen_example/widgets/shared_counter.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -70,8 +71,9 @@ class _MainScreenState extends State<MainScreen> {
               const AnimationBox(),
             ] else ...[
               const Text('No sub display found'),
-              const SizedBox(height: 32),
             ],
+            const SizedBox(height: 12),
+            const SharedCounterView(),
           ],
         ),
       ),

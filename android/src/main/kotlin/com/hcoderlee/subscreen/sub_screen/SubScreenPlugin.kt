@@ -8,6 +8,9 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
+const val methodChannelName = "com.hcoderlee.subscreen.sub_screen/methods"
+const val sharedStateChannelName = "com.hcoderlee.subscreen.sub_screen/shared_state"
+
 class SubScreenPlugin : FlutterPlugin {
     companion object {
         private val methodHandlerDelegator = PluginMethodHandlerDelegator()
@@ -15,18 +18,67 @@ class SubScreenPlugin : FlutterPlugin {
     }
 
     private var handlerId: Int? = null
+    private lateinit var sharedStatsChannel: MethodChannel
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         if (handlerId != null) {
             methodHandlerDelegator.dispose(handlerId!!)
         }
         handlerId = methodHandlerDelegator.createHandler(flutterPluginBinding)
+        sharedStatsChannel = MethodChannel(
+            flutterPluginBinding.binaryMessenger,
+            sharedStateChannelName
+        )
+        initSharedStatsChannel()
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         if (handlerId != null) {
             methodHandlerDelegator.dispose(handlerId!!)
         }
+        SharedStateManager.removeOnStateChangeListener(::onSharedStatsChange)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun initSharedStatsChannel() {
+        sharedStatsChannel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "updateState" -> {
+                    val data = call.arguments as Map<*, *>
+                    val type = data["type"] as String
+                    val state = data["state"] as Map<String, Any>?
+                    SharedStateManager.updateState(type, state)
+                    result.success(null)
+                }
+
+                "getState" -> {
+                    val data = call.arguments as Map<*, *>
+                    val type = data["type"] as String
+                    val state = SharedStateManager.getState(type)
+                    result.success(state)
+                }
+
+                "clearState" -> {
+                    val data = call.arguments as Map<*, *>
+                    val type = data["type"] as String
+                    SharedStateManager.removeState(type)
+                    result.success(null)
+                }
+
+                else -> {
+                    throw Exception("Unimplemented method: ${call.method}")
+                }
+            }
+        }
+
+        SharedStateManager.addOnStateChangeListener(::onSharedStatsChange)
+    }
+
+    private fun onSharedStatsChange(type: String, state: SharedState) {
+        sharedStatsChannel.invokeMethod(
+            "onStateChanged",
+            mapOf("type" to type, "data" to state)
+        )
     }
 }
 
@@ -40,7 +92,7 @@ class PluginMethodHandler(
     flutterPluginBinding: FlutterPlugin.FlutterPluginBinding
 ) : MethodCallHandler, MultiDisplayCallback {
     private val channel: MethodChannel =
-        MethodChannel(flutterPluginBinding.binaryMessenger, "sub_screen")
+        MethodChannel(flutterPluginBinding.binaryMessenger, methodChannelName)
 
     init {
         channel.setMethodCallHandler(this)
