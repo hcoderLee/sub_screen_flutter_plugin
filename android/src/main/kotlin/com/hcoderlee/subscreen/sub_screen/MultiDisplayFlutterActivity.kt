@@ -38,7 +38,7 @@ open class MultiDisplayFlutterActivity : FlutterActivity() {
     /**
      * Return the entry point function name for the flutter engine of sub screen
      */
-    protected fun getSubScreenEntryPoint(): String? {
+    protected open fun getSubScreenEntryPoint(): String? {
         return null
     }
 
