@@ -11,6 +11,10 @@ object SharedStateManager {
         return sharedStats[type]
     }
 
+    fun getAllState(): Map<String, SharedState> {
+        return sharedStats
+    }
+
     fun removeState(type: String) {
         if (!sharedStats.contains(type)) {
             return

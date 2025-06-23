@@ -20,7 +20,17 @@ abstract class SharedState<T> extends ChangeNotifier {
       runtimeType.toString(),
       _onStateChange,
     );
-    _state = build();
+
+    // Try to init state from local cache
+    final cachedState = SharedStateManager.instance.getCachedState(
+      runtimeType.toString(),
+    );
+    if (cachedState != null) {
+      // Mark state synchronization as completed
+      _isSyncComplete = true;
+      _state = fromJson(cachedState);
+      return;
+    }
     initialSync = _syncState();
   }
 
@@ -30,6 +40,10 @@ abstract class SharedState<T> extends ChangeNotifier {
       await initialSync;
     }
 
+    // Update state value and notify registered listener
+    _state = state;
+    notifyListeners();
+    // Notify state change for other listeners and flutter engines
     SharedStateManager.instance.updateState(
       runtimeType.toString(),
       toJson(state),
@@ -40,6 +54,10 @@ abstract class SharedState<T> extends ChangeNotifier {
     if (!_isSyncComplete) {
       await initialSync;
     }
+    // Clear state value and notify to registered listener
+    _state = null;
+    notifyListeners();
+    // Notify state clear for other listeners and flutter engines
     SharedStateManager.instance.clearState(runtimeType.toString());
   }
 
@@ -55,19 +73,28 @@ abstract class SharedState<T> extends ChangeNotifier {
     }
   }
 
-  void _onStateChange(Map<String, dynamic>? data) {
+  void _onStateChange(Map<String, dynamic>? newState) {
+    if (_isSameState(newState)) {
+      // Filter out the state that not changed
+      return;
+    }
+
     try {
-      if (data == null) {
+      if (newState == null) {
         _state = null;
       } else {
-        _state = fromJson(data);
+        _state = fromJson(newState);
       }
       notifyListeners();
     } catch (e) {
       throw Exception(
-        "SharedState failed to parse for $runtimeType from: $data, $e",
+        "SharedState failed to parse for $runtimeType from: $newState, $e",
       );
     }
+  }
+
+  bool _isSameState(Map<String, dynamic>? newState) {
+    return newState?.toString() == toJson(state)?.toString();
   }
 
   @override
@@ -82,14 +109,6 @@ abstract class SharedState<T> extends ChangeNotifier {
   T fromJson(Map<String, dynamic> json);
 
   Map<String, dynamic>? toJson(T? data);
-
-  /// Create the initial state value for current type. It make sure to use the same
-  /// initial value in different flutter engine
-  /// Return an immutable object and without refer to fields that are variant in
-  /// different flutter engine
-  T? build() {
-    return null;
-  }
 }
 
 class SharedStateManager {
@@ -103,8 +122,13 @@ class SharedStateManager {
   final Map<String, Set<OnSharedStateChangeListener>> _listeners = {};
   late final MethodChannel methodChannel;
 
+  late final Future _syncSharedState;
+  Map<String, Map<String, dynamic>?> _cachedSharedState = {};
+  bool _hasSyncData = false;
+
   SharedStateManager._() {
     _initMethodChannel();
+    _syncSharedState = _initSharedState();
   }
 
   void _initMethodChannel() {
@@ -112,11 +136,19 @@ class SharedStateManager {
     methodChannel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'onStateChanged':
-          final type = call.arguments['type'] as String?;
-          assert(type != null);
+          if (!_hasSyncData) {
+            // Waiting to sync data from native platform
+            await _syncSharedState;
+          }
+
+          // Parse updated state data
+          final type = call.arguments['type'] as String;
           final rawData = call.arguments['data'];
-          final data = rawData != null ? convertMapToJson(rawData) : null;
-          _notifyListeners(type!, data);
+          final newState = rawData != null ? convertMapToJson(rawData) : null;
+          // Update local cached state
+          _cachedSharedState[type] = newState;
+          // Notify state change
+          _notifyListeners(type, newState);
           break;
         default:
           throw "SharedStateManager: Unknown method ${call.method}";
@@ -124,19 +156,45 @@ class SharedStateManager {
     });
   }
 
+  /// Sync all shared state data from native platform
+  Future _initSharedState() async {
+    final res =
+        await methodChannel.invokeMethod<Map<Object?, dynamic>>("getAllState");
+    _cachedSharedState = res?.map(
+          (key, value) => MapEntry(
+            key.toString(),
+            convertMapToJson(value),
+          ),
+        ) ??
+        {};
+    _hasSyncData = true;
+  }
+
   Future<Map<String, dynamic>?> getState(String type) async {
-    final result = await methodChannel.invokeMethod<Map<Object?, Object?>>(
-      'getState',
-      {'type': type},
-    );
-    if (result == null) {
-      return null;
+    if (!_hasSyncData) {
+      // Waiting to sync data from native platform
+      await _syncSharedState;
     }
-    return convertMapToJson(result);
+    return _cachedSharedState[type];
+  }
+
+  Map<String, dynamic>? getCachedState(String type) {
+    return _cachedSharedState[type];
   }
 
   Future<void> updateState(String type, Map<String, dynamic>? data) async {
     try {
+      if (!_hasSyncData) {
+        // Waiting to sync data from native platform
+        await _syncSharedState;
+      }
+
+      // Update cached state
+      _cachedSharedState[type] = data;
+      // Notify state change to registered listeners
+      _notifyListeners(type, data);
+
+      // Notify other flutter engine to update state
       await methodChannel.invokeMethod('updateState', {
         'type': type,
         'state': data,
@@ -148,6 +206,16 @@ class SharedStateManager {
 
   Future<void> clearState(String type) async {
     try {
+      if (!_hasSyncData) {
+        // Waiting to sync data from native platform
+        await _syncSharedState;
+      }
+
+      // Clear local cached state for specified type
+      _cachedSharedState[type] = null;
+      // Notify state clear to registered listeners
+      _notifyListeners(type, null);
+      // Notify other flutter engine to clear state
       await methodChannel.invokeMethod('clearState', {'type': type});
     } on PlatformException catch (e) {
       debugPrint('Error clear shared state: ${e.message}');

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:sub_screen_example/widgets/animation_box.dart';
 import 'package:sub_screen_example/widgets/shared_counter.dart';
 
+import 'counter_page.dart';
+
 class SubScreen extends StatefulWidget {
   const SubScreen({super.key});
 
@@ -28,6 +30,17 @@ class _SubScreenState extends State<SubScreen> {
             const AnimationBox(),
             const SizedBox(height: 12),
             const SharedCounterView(),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (BuildContext context) => const CounterPage(),
+                  ),
+                );
+              },
+              child: const Text("Goto Counter Page"),
+            ),
           ],
         ),
       ),

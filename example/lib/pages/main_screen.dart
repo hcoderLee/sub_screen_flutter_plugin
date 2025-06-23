@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sub_screen/model.dart';
 import 'package:sub_screen/sub_screen.dart';
+import 'package:sub_screen_example/pages/counter_page.dart';
 import 'package:sub_screen_example/widgets/animation_box.dart';
 import 'package:sub_screen_example/widgets/shared_counter.dart';
 
@@ -74,6 +75,17 @@ class _MainScreenState extends State<MainScreen> {
             ],
             const SizedBox(height: 12),
             const SharedCounterView(),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (BuildContext context) => const CounterPage(),
+                  ),
+                );
+              },
+              child: const Text("Goto Counter Page"),
+            ),
           ],
         ),
       ),

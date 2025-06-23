@@ -20,9 +20,4 @@ class SharedCounterState extends SharedState<Counter> {
     }
     return {'count': data.count};
   }
-
-  @override
-  Counter? build() {
-    return Counter(5);
-  }
 }

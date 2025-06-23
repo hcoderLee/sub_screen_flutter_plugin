@@ -43,6 +43,11 @@ class SubScreenPlugin : FlutterPlugin {
     private fun initSharedStatsChannel() {
         sharedStatsChannel.setMethodCallHandler { call, result ->
             when (call.method) {
+                "getAllState" -> {
+                    val allState = SharedStateManager.getAllState()
+                    result.success(allState)
+                }
+
                 "updateState" -> {
                     val data = call.arguments as Map<*, *>
                     val type = data["type"] as String

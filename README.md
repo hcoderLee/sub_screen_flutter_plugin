@@ -170,13 +170,6 @@ class CounterState extends SharedState<Counter> {
   Map<String, dynamic>? toJson(Counter? data) {
     return data?.toJson();
   }
-
-  @override
-  Counter? build() {
-    // Return an unmodifiable initial state
-    // This ensures consistent initial state across different Flutter engines
-    return Counter(0);
-  }
 }
 
 // Use the shared state
