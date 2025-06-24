@@ -35,13 +35,13 @@ abstract class SharedState<T> extends ChangeNotifier {
   }
 
   void setState(T? state) async {
+    // Update local state value
+    _state = state;
     // Make sure initial value synchronization complete
     if (!_isSyncComplete) {
       await initialSync;
     }
-
-    // Update state value and notify registered listener
-    _state = state;
+    // Notify registered listener
     notifyListeners();
     // Notify state change for other listeners and flutter engines
     SharedStateManager.instance.updateState(
