@@ -11,7 +11,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineGroupCache
 import io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint
 
-class FlutterPresentation(
+open class FlutterPresentation(
     context: Context,
     display: Display,
     val entryPointFun: String

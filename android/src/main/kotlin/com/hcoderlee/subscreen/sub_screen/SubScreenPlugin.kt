@@ -1,6 +1,7 @@
 package com.hcoderlee.subscreen.sub_screen
 
 import android.util.DisplayMetrics
+import android.util.Log
 import android.view.Display
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
@@ -147,6 +148,7 @@ class PluginMethodHandler(
         display.getMetrics(metrics)
         val width = metrics.widthPixels
         val height = metrics.heightPixels
+        val density = metrics.density
         val refreshRate = display.refreshRate
         return mapOf(
             "id" to display.displayId,
@@ -154,6 +156,7 @@ class PluginMethodHandler(
             "width" to width,
             "height" to height,
             "refreshRate" to refreshRate,
+            "density" to density,
             "isDefault" to display.isDefault()
         )
     }

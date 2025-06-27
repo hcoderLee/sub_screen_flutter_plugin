@@ -41,6 +41,7 @@ abstract class SharedState<T> extends ChangeNotifier {
     if (!_isSyncComplete) {
       await initialSync;
     }
+
     // Notify registered listener
     notifyListeners();
     // Notify state change for other listeners and flutter engines
@@ -159,13 +160,14 @@ class SharedStateManager {
   /// Sync all shared state data from native platform
   Future _initSharedState() async {
     final res =
-        await methodChannel.invokeMethod<Map<Object?, dynamic>>("getAllState");
+    await methodChannel.invokeMethod<Map<Object?, dynamic>>("getAllState");
     _cachedSharedState = res?.map(
-          (key, value) => MapEntry(
+          (key, value) =>
+          MapEntry(
             key.toString(),
             convertMapToJson(value),
           ),
-        ) ??
+    ) ??
         {};
     _hasSyncData = true;
   }
@@ -222,18 +224,14 @@ class SharedStateManager {
     }
   }
 
-  void addStateChangeListener(
-    String type,
-    OnSharedStateChangeListener listener,
-  ) {
+  void addStateChangeListener(String type,
+      OnSharedStateChangeListener listener,) {
     _listeners.putIfAbsent(type, () => {});
     _listeners[type]!.add(listener);
   }
 
-  void removeStateChangeListener<T>(
-    String type,
-    OnSharedStateChangeListener listener,
-  ) {
+  void removeStateChangeListener<T>(String type,
+      OnSharedStateChangeListener listener,) {
     final stateListeners = _listeners[type];
     if (stateListeners == null || stateListeners.isEmpty) {
       return;

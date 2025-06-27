@@ -3,6 +3,7 @@ package com.hcoderlee.subscreen.sub_screen
 import android.app.Presentation
 import android.os.Bundle
 import android.view.Display
+import androidx.annotation.CallSuper
 import io.flutter.embedding.android.FlutterActivity
 
 open class MultiDisplayFlutterActivity : FlutterActivity() {
@@ -11,7 +12,7 @@ open class MultiDisplayFlutterActivity : FlutterActivity() {
         private const val SUB_SCREEN_ENTRY_POINT = "subScreenEntry"
     }
 
-    private var subScreenPresentation: Presentation? = null
+    protected var subScreenPresentation: Presentation? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         FlutterEngineHelper.init(this)
@@ -24,7 +25,7 @@ open class MultiDisplayFlutterActivity : FlutterActivity() {
 
             override fun removeSubScreen(displayId: Int) {
                 if (displayId == subScreenPresentation?.display?.displayId) {
-                    onCloseSubScreenPresentation()
+                    onCloseSubScreen()
                 }
             }
 
@@ -45,14 +46,15 @@ open class MultiDisplayFlutterActivity : FlutterActivity() {
     override fun onDestroy() {
         super.onDestroy()
         MultiDisplayHandler.dispose()
-        onCloseSubScreenPresentation()
+        onCloseSubScreen()
     }
 
-    private fun onLaunchSubScreen(display: Display) {
+    @CallSuper
+    protected open fun onLaunchSubScreen(display: Display) {
         // The entry function name for the flutter engine of sub screen
         val subScreenEntryPoint = getSubScreenEntryPoint() ?: SUB_SCREEN_ENTRY_POINT
 
-        subScreenPresentation = FlutterPresentation(
+        subScreenPresentation = createSubScreenPresentation(display) ?: FlutterPresentation(
             context,
             display,
             subScreenEntryPoint
@@ -61,8 +63,13 @@ open class MultiDisplayFlutterActivity : FlutterActivity() {
         }
     }
 
-    private fun onCloseSubScreenPresentation() {
+    @CallSuper
+    protected open fun onCloseSubScreen() {
         subScreenPresentation?.dismiss()
         subScreenPresentation = null
+    }
+
+    protected fun <T : FlutterPresentation> createSubScreenPresentation(display: Display): T? {
+        return null
     }
 }

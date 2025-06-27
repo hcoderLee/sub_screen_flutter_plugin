@@ -1,6 +1,6 @@
 name: sub_screen
 description: "A Flutter plugin to support sub screen"
-version: 0.1.2
+version: 0.1.3
 homepage: "https://github.com/hcoderLee/sub_screen_flutter_plugin"
 
 environment:

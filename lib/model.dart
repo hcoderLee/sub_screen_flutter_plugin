@@ -5,6 +5,7 @@ class Display {
   final int height;
   final double refreshRate;
   final bool isDefault;
+  final double density;
 
   Display({
     required this.id,
@@ -13,6 +14,7 @@ class Display {
     required this.height,
     required this.refreshRate,
     required this.isDefault,
+    required this.density,
   });
 
   factory Display.fromMap(Map<String, dynamic> map) {
@@ -23,12 +25,13 @@ class Display {
       height: map['height'] as int,
       refreshRate: map['refreshRate'] as double,
       isDefault: map['isDefault'] as bool,
+      density: map["density"] as double,
     );
   }
 
   @override
   String toString() {
-    return 'Display{id: $id, name: $name, width: $width, height: $height, refreshRate: $refreshRate, isDefault: $isDefault}';
+    return 'Display{id: $id, name: $name, width: $width, height: $height, density: $density, refreshRate: $refreshRate, isDefault: $isDefault}';
   }
 }
 
